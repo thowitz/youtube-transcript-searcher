@@ -3,7 +3,7 @@ from youtube_transcript_api import YouTubeTranscriptApi
 import re
 
 searchTerm = "subscribe"
-numberOfVideosToSearch = 2
+numberOfVideosToSearch = 3
 channelToSearch = "UC4JX40jDee_tINbkjycV4Sg"
 
 
@@ -25,14 +25,14 @@ def main():
 
     for videoId in videoIds:
         videoTranscript = transcripts[videoId]
-        searchTermVideoOccurrences = searchVideoTranscript(videoTranscript)
+        searchTermVideoOccurrences = searchVideoTranscript(searchTerm, videoTranscript)
         if searchTermVideoOccurrences:
-            searchTermVideoOccurrences.append({videoId: searchTermVideoOccurrences})
+            searchTermOccurrences.append({videoId: searchTermVideoOccurrences})
 
     print(searchTermOccurrences)
 
 
-def searchVideoTranscript(videoTranscript):
+def searchVideoTranscript(searchTerm, videoTranscript):
     # todo use numpy
     searchTermVideoOccurrences = []
 
@@ -43,8 +43,8 @@ def searchVideoTranscript(videoTranscript):
         if transcriptSectionText == "[Music]":
             continue
 
-        searchTerm = re.search(searchTerm, transcriptSectionText)
-        if searchTerm:
+        searchTermResult = re.search(searchTerm, transcriptSectionText)
+        if searchTermResult:
             searchTermVideoOccurrences.append(transcriptSection)
 
     return searchTermVideoOccurrences
