@@ -2,7 +2,7 @@ import scrapetube
 from youtube_transcript_api import YouTubeTranscriptApi
 import re
 
-searchTerm = "subscribe"
+searchTerm = "anyways"
 numberOfVideosToSearch = 3
 channelToSearch = "UC4JX40jDee_tINbkjycV4Sg"
 
@@ -21,15 +21,23 @@ def main():
     # todo use numpy
     transcripts = transcripts[0]
 
-    searchTermOccurrences = []
+    searchTermOccurrences = {}
 
     for videoId in videoIds:
         videoTranscript = transcripts[videoId]
         searchTermVideoOccurrences = searchVideoTranscript(searchTerm, videoTranscript)
         if searchTermVideoOccurrences:
-            searchTermOccurrences.append({videoId: searchTermVideoOccurrences})
+            searchTermOccurrences[videoId] = searchTermVideoOccurrences
 
-    print(searchTermOccurrences)
+    for videoId in videoIds:
+        if videoId in searchTermOccurrences:
+            video = searchTermOccurrences[videoId]
+            print()
+            print(videoId)
+            for occurrence in video:
+                print(f'Start: {occurrence["start"]}')
+                print(f'Text: {occurrence["text"]}')
+            print()
 
 
 def searchVideoTranscript(searchTerm, videoTranscript):
