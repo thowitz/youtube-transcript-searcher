@@ -1,6 +1,7 @@
 import scrapetube
 from youtube_transcript_api import YouTubeTranscriptApi
 import re
+import numpy as np
 
 searchTerm = "anyways"
 numberOfVideosToSearch = 3
@@ -19,7 +20,7 @@ def main():
 
     transcripts = YouTubeTranscriptApi.get_transcripts(videoIds)
     # todo use numpy
-    transcripts = transcripts[0]
+    transcripts = np.array(transcripts[0])
 
     searchTermOccurrences = {}
 
@@ -35,7 +36,11 @@ def main():
             print()
             print(videoId)
             for occurrence in video:
-                print(f'Start: {occurrence["start"]}')
+                startTimeTotalSeconds = round(occurrence["start"] - 1)
+                startTimeMinutes = int(startTimeTotalSeconds / 60)
+                startTimeSeconds = startTimeTotalSeconds % 60
+
+                print(f"Start: {startTimeMinutes}:{startTimeSeconds}")
                 print(f'Text: {occurrence["text"]}')
             print()
 
