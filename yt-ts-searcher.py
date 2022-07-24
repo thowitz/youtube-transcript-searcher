@@ -2,15 +2,21 @@ import scrapetube
 from youtube_transcript_api import YouTubeTranscriptApi
 import re
 import numpy as np
+import requests
+import time
 
 searchTerm = "anyways"
-numberOfVideosToSearch = 100
-channelToSearch = "UC4JX40jDee_tINbkjycV4Sg"
+numberOfVideosToSearch = 10
+channelUsernameToSearch = "techwithtim"
 languages = ["en", "en-UK", "en-CA"]
 
 
 def main():
-    allVideos = scrapetube.get_channel(channelToSearch)
+    startTime = time.time()
+
+    channelIdToSearch = getChannelIdFromUsername(channelUsernameToSearch)
+
+    allVideos = scrapetube.get_channel(channelIdToSearch)
     videoIds = []
 
     for videoIndex, video in enumerate(allVideos):
@@ -36,10 +42,14 @@ def main():
             if searchTermVideoOccurrences:
                 searchTermOccurrences[videoId] = searchTermVideoOccurrences
 
+    finishTime = time.time()
+
+    occurrenceNumber = 1
     for videoId in videoIds:
         if videoId in searchTermOccurrences:
             video = searchTermOccurrences[videoId]
             print()
+            print(f"#{occurrenceNumber}")
             print(videoId)
             print(f"https://youtube.com/watch?v={videoId}")
             for occurrence in video:
@@ -50,10 +60,36 @@ def main():
                 print(f"Start: {startTimeMinutes}:{startTimeSeconds}")
                 print(f'Text: {occurrence["text"]}')
             print()
+            occurrenceNumber += 1
 
-    print("Failed to retrieve transcripts for:")
-    for failedTranscript in failedTranscripts:
-        print(failedTranscript)
+    if failedTranscripts:
+        print("Failed to retrieve transcripts for:")
+        for failedTranscript in failedTranscripts:
+            print(failedTranscript)
+
+    print()
+    print(f"[+] Finished searching channel {channelUsernameToSearch}")
+    print(
+        f"[+] Searched the latest {numberOfVideosToSearch} videos for the term {searchTerm}"
+    )
+    print(
+        f"[+] Found {len(searchTermOccurrences)} occurrences in {round(finishTime-startTime)}s"
+    )
+    print(f"[+] Failed to check {len(failedTranscripts)} transcripts")
+
+
+def getChannelIdFromUsername(channelNameToSearch):
+    channelResponse = requests.get(
+        f"https://youtube.com/c/{channelNameToSearch}?cbrd=1&ucbcb=1"
+    )
+    channelSource = str(channelResponse.content)
+    channelIdSearchResult = re.search("externalId", channelSource)
+    if channelIdSearchResult:
+        startOfChannelId = channelIdSearchResult.span()[1] + 3
+        channelId = channelSource[startOfChannelId : startOfChannelId + 24]
+        return channelId
+    else:
+        raise Exception("Channel id not found from source code")
 
 
 def searchVideoTranscript(searchTerm: str, videoTranscript: list):
