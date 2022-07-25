@@ -25,6 +25,10 @@
 - Each transcript of each video is checked for the search term and any occurrences are stored
 - At the end, the id of each video containing any occurrences is printed along with the text and start position of every occurrence
 
+## Languages
+
+Currently, only english is supported, if there's enough interest, I might add translation/support for other languages
+
 ## Acknowledgements
 
 **Youtube libraries**

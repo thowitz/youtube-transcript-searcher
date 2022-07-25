@@ -6,7 +6,7 @@ import numpy as np
 import requests
 import time
 
-languages = ["en", "en-UK", "en-US", "en-CA"]
+languages = ["en", "en-UK", "en-US", "en-CA", "en-AU"]
 
 
 def main(searchTerm, channelUsername, numberOfVideos):
