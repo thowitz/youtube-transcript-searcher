@@ -1,17 +1,44 @@
 import scrapetube
 from youtube_transcript_api import YouTubeTranscriptApi
+import typer
 import re
 import numpy as np
 import requests
 import time
 
-searchTerm = "anyways"
-numberOfVideosToSearch = 10
-channelUsernameToSearch = "techwithtim"
-languages = ["en", "en-UK", "en-CA"]
+languages = ["en", "en-UK", "en-US", "en-CA"]
 
 
-def main():
+def main(
+    searchterm: str = typer.Option(
+        ...,
+        "--search-term",
+        "-t",
+        help="Term to search for",
+        rich_help_panel="Search Options",
+        prompt="Please enter the search term",
+    ),
+    channelusername: str = typer.Option(
+        ...,
+        "--channel-username",
+        "-u",
+        help="The username of the channel to search, found in the address bar of the channel page",
+        rich_help_panel="Search Options",
+        prompt="Please enter the channel username",
+    ),
+    numberofvideos: int = typer.Option(
+        10,
+        "--number-of-videos",
+        "-n",
+        help="The number of videos to search through, from latest to oldest",
+        rich_help_panel="Search Options",
+        prompt="Please enter the number of videos to search through",
+    ),
+):
+    searchTerm = searchterm
+    numberOfVideosToSearch = numberofvideos
+    channelUsernameToSearch = channelusername
+
     startTime = time.time()
 
     channelIdToSearch = getChannelIdFromUsername(channelUsernameToSearch)
@@ -32,6 +59,7 @@ def main():
     transcripts = transcripts[0]
 
     searchTermOccurrences = {}
+    numberOfOccurrences = 0
 
     for videoId in videoIds:
         if videoId in transcripts:
@@ -41,6 +69,7 @@ def main():
             )
             if searchTermVideoOccurrences:
                 searchTermOccurrences[videoId] = searchTermVideoOccurrences
+                numberOfOccurrences += len(searchTermVideoOccurrences)
 
     finishTime = time.time()
 
@@ -73,7 +102,7 @@ def main():
         f"[+] Searched the latest {numberOfVideosToSearch} videos for the term {searchTerm}"
     )
     print(
-        f"[+] Found {len(searchTermOccurrences)} occurrences in {round(finishTime-startTime)}s"
+        f"[+] Found {numberOfOccurrences} occurrences in {round(finishTime-startTime)}s"
     )
     print(f"[+] Failed to check {len(failedTranscripts)} transcripts")
 
@@ -109,4 +138,5 @@ def searchVideoTranscript(searchTerm: str, videoTranscript: list):
     return searchTermVideoOccurrences
 
 
-main()
+if __name__ == "__main__":
+    typer.run(main)
