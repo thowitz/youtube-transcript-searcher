@@ -9,7 +9,49 @@ import time
 languages = ["en", "en-UK", "en-US", "en-CA"]
 
 
-def main(
+def main(searchTerm, channelUsername, numberOfVideos):
+    startTime = time.time()
+
+    videoIds = getVideoIds(channelUsername, numberOfVideos)
+
+    transcripts = YouTubeTranscriptApi.get_transcripts(
+        videoIds, languages=languages, continue_after_error=True
+    )
+    failedTranscripts = transcripts[1]
+    transcripts = transcripts[0]
+
+    searchTermOccurrences = {}
+    numberOfOccurrences = 0
+
+    for videoId in videoIds:
+        if videoId in transcripts:
+            videoTranscript: list = transcripts[videoId]
+            searchTermVideoOccurrences = searchVideoTranscript(
+                searchTerm, videoTranscript
+            )
+            if searchTermVideoOccurrences:
+                searchTermOccurrences[videoId] = searchTermVideoOccurrences
+                numberOfOccurrences += len(searchTermVideoOccurrences)
+
+    finishTime = time.time()
+
+    printOccurrences(
+        videoIds,
+        searchTermOccurrences,
+    )
+
+    printMetadata(
+        numberOfOccurrences,
+        failedTranscripts,
+        searchTerm,
+        channelUsername,
+        numberOfVideos,
+        startTime,
+        finishTime,
+    )
+
+
+def typerHelper(
     searchterm: str = typer.Option(
         ...,
         "--search-term",
@@ -35,81 +77,31 @@ def main(
         prompt="Please enter the number of videos to search through",
     ),
 ):
-    searchTerm = searchterm
-    numberOfVideosToSearch = numberofvideos
-    channelUsernameToSearch = channelusername
+    main(
+        searchTerm=searchterm,
+        channelUsername=channelusername,
+        numberOfVideos=numberofvideos,
+    )
 
-    startTime = time.time()
 
-    channelIdToSearch = getChannelIdFromUsername(channelUsernameToSearch)
+def getVideoIds(channelUsername, numberOfVideos):
+    channelId = getChannelIdFromUsername(channelUsername)
 
-    allVideos = scrapetube.get_channel(channelIdToSearch)
+    allVideos = scrapetube.get_channel(channelId)
     videoIds = []
 
     for videoIndex, video in enumerate(allVideos):
-        if videoIndex >= numberOfVideosToSearch:
+        if videoIndex >= numberOfVideos:
             break
 
         videoIds.append(video["videoId"])
 
-    transcripts = YouTubeTranscriptApi.get_transcripts(
-        videoIds, languages=languages, continue_after_error=True
-    )
-    failedTranscripts = transcripts[1]
-    transcripts = transcripts[0]
-
-    searchTermOccurrences = {}
-    numberOfOccurrences = 0
-
-    for videoId in videoIds:
-        if videoId in transcripts:
-            videoTranscript: list = transcripts[videoId]
-            searchTermVideoOccurrences = searchVideoTranscript(
-                searchTerm, videoTranscript
-            )
-            if searchTermVideoOccurrences:
-                searchTermOccurrences[videoId] = searchTermVideoOccurrences
-                numberOfOccurrences += len(searchTermVideoOccurrences)
-
-    finishTime = time.time()
-
-    occurrenceNumber = 1
-    for videoId in videoIds:
-        if videoId in searchTermOccurrences:
-            video = searchTermOccurrences[videoId]
-            print()
-            print(f"#{occurrenceNumber}")
-            print(videoId)
-            print(f"https://youtube.com/watch?v={videoId}")
-            for occurrence in video:
-                startTimeTotalSeconds = round(occurrence["start"] - 1)
-                startTimeMinutes = int(startTimeTotalSeconds / 60)
-                startTimeSeconds = startTimeTotalSeconds % 60
-
-                print(f"Start: {startTimeMinutes}:{startTimeSeconds}")
-                print(f'Text: {occurrence["text"]}')
-            print()
-            occurrenceNumber += 1
-
-    if failedTranscripts:
-        print("Failed to retrieve transcripts for:")
-        for failedTranscript in failedTranscripts:
-            print(failedTranscript)
-
-    print()
-    print(f"[+] Finished searching channel {channelUsernameToSearch}")
-    print(
-        f"[+] Searched the latest {numberOfVideosToSearch} videos for the term {searchTerm}"
-    )
-    print(
-        f"[+] Found {numberOfOccurrences} occurrences in {round(finishTime-startTime)}s"
-    )
-    print(f"[+] Failed to check {len(failedTranscripts)} transcripts")
+    return videoIds
 
 
-def getChannelIdFromUsername(channelNameToSearch):
+def getChannelIdFromUsername(channelUsername):
     channelResponse = requests.get(
-        f"https://youtube.com/c/{channelNameToSearch}?cbrd=1&ucbcb=1"
+        f"https://youtube.com/c/{channelUsername}?cbrd=1&ucbcb=1"
     )
     channelSource = str(channelResponse.content)
     channelIdSearchResult = re.search("externalId", channelSource)
@@ -138,5 +130,54 @@ def searchVideoTranscript(searchTerm: str, videoTranscript: list):
     return searchTermVideoOccurrences
 
 
+def printOccurrences(
+    videoIds,
+    searchTermOccurrences,
+):
+
+    occurrenceNumber = 1
+    for videoId in videoIds:
+        if videoId in searchTermOccurrences:
+            video = searchTermOccurrences[videoId]
+            print()
+            print(f"#{occurrenceNumber}")
+            print(videoId)
+            print(f"https://youtube.com/watch?v={videoId}")
+            for occurrence in video:
+                startTimeTotalSeconds = round(occurrence["start"] - 1)
+                startTimeMinutes = int(startTimeTotalSeconds / 60)
+                startTimeSeconds = startTimeTotalSeconds % 60
+
+                print(f"Start: {startTimeMinutes}:{startTimeSeconds}")
+                print(f'Text: {occurrence["text"]}')
+            print()
+            occurrenceNumber += 1
+
+
+def printMetadata(
+    numberOfOccurrences,
+    failedTranscripts,
+    searchTerm,
+    channelUsername,
+    numberOfVideos,
+    startTime,
+    finishTime,
+):
+    if failedTranscripts:
+        print("Failed to retrieve transcripts for:")
+        for failedTranscript in failedTranscripts:
+            print(failedTranscript)
+
+    print()
+    print(f"[+] Finished searching channel {channelUsername}")
+    print(
+        f"[+] Searched the latest {numberOfVideos} video(s) for the term {searchTerm}"
+    )
+    print(
+        f"[+] Found {numberOfOccurrences} occurrence(s) in {round(finishTime-startTime)}s"
+    )
+    print(f"[+] Failed to check {len(failedTranscripts)} transcript(s)")
+
+
 if __name__ == "__main__":
-    typer.run(main)
+    typer.run(typerHelper)
