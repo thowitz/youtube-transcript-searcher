@@ -20,10 +20,10 @@
 
 ## How it works
 
-- The scrapetube library is used to get a list of the video ids, where the length is the number of videos to search for
-- The transcripts for the videos in the video ids list are then retrieved using the youtube transcript api library
-- Each transcript of each video is checked for the search term and any occurrences are stored
-- At the end, the id of each video containing any occurrences is printed along with the text and start position of every occurrence
+1. The scrapetube library is used to get a list of the video ids, where the length is the number of videos to search for
+2. The transcripts for the videos in the video ids list are then retrieved using the youtube transcript api library
+3. Each transcript of each video is checked for the search term and any occurrences are stored
+4. At the end, the id of each video containing any occurrences is printed along with the text and start position of every occurrence
 
 ## Languages
 
